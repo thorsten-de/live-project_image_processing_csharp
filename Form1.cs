@@ -116,10 +116,38 @@ namespace image_processor
             }
         }
 
+        private const int COLUMNS_PER_ROW = 4;
         // Make a montage of files, four per row.
         private Bitmap MakeMontage(string[] filenames, Color bgColor)
         {
-            return null;
+            int maxWidth = 0;
+            int maxHeight = 0;
+
+            var images = new Bitmap[filenames.Length];
+            for (int i = 0; i < filenames.Length; i++)
+            {
+                var image = LoadBitmapUnlocked(filenames[i]);
+                images[i] = image;
+                maxWidth = Math.Max(maxWidth, image.Width);
+                maxHeight = Math.Max(maxHeight, image.Height);
+            }
+
+            int rows = (images.Length - 1) / COLUMNS_PER_ROW + 1;
+            int cols = Math.Min(images.Length, 4);
+
+            Bitmap result = new Bitmap(cols * maxWidth, rows * maxHeight);
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                g.Clear(bgColor);
+                for (int i = 0; i < images.Length; i++)
+                {
+                    int x = (i % COLUMNS_PER_ROW) * maxWidth;
+                    int y = (i / COLUMNS_PER_ROW) * maxHeight;
+                    g.DrawImage(images[i], x, y);
+                }
+            }
+
+            return result;
         }
 
         private void mnuFileExit_Click(object sender, EventArgs e)
