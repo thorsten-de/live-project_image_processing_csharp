@@ -55,8 +55,7 @@ namespace image_processor
                 {
                     Bitmap bm = LoadBitmapUnlocked(ofdFile.FileName);
                     OriginalBm = bm;
-                    CurrentBm = (Bitmap)OriginalBm.Clone();
-                    resultPictureBox.Image = CurrentBm;
+                    ResetImage();
 
                     // Enable menu items because an image is loaded.
                     SetMenusEditable(true);
@@ -91,7 +90,13 @@ namespace image_processor
         // Restore the original unmodified image.
         private void mnuFileReset_Click(object sender, EventArgs e)
         {
+            ResetImage();
+        }
 
+        private void ResetImage()
+        {
+            CurrentBm = (Bitmap)OriginalBm.Clone();
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Make a montage of files.
