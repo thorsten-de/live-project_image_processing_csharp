@@ -193,7 +193,20 @@ namespace image_processor
 
         private void mnuGeometryStretch_Click(object sender, EventArgs e)
         {
+            var scales = InputForm
+                .GetString("Stretch image", "Strech X, Y", "3, 2")
+                .Split(',')
+                .Select(s => float.Parse(s.Trim()))
+                .ToArray();
 
+            if (scales.Length < 2 || scales.Any(s => s <= 0))
+            {
+                MessageBox.Show("Two strech factors < 0 must be privided.", "Strech image", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            CurrentBm = CurrentBm.Scale(scales[0], scales[1], _interpolationMode);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuGeometryRotateFlip_Click(object sender, EventArgs e)
