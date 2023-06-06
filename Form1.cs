@@ -8,11 +8,14 @@ using System.Text;
 using System.Windows.Forms;
 
 using System.Drawing.Drawing2D;
+using System.Linq.Expressions;
 
 namespace image_processor
 {
     public partial class Form1 : Form
     {
+        private const InterpolationMode _interpolationMode = InterpolationMode.High;
+
         public Form1()
         {
             InitializeComponent();
@@ -172,14 +175,20 @@ namespace image_processor
             if (angle == float.NaN)
                 return;
 
-            CurrentBm = CurrentBm.RotateAtCenter(angle, Color.Teal, InterpolationMode.High); ;
+            CurrentBm = CurrentBm.RotateAtCenter(angle, Color.Black, _interpolationMode); ;
             resultPictureBox.Image = CurrentBm;
         }
 
         // Scale the image uniformly.
         private void mnuGeometryScale_Click(object sender, EventArgs e)
         {
+            var angle = InputForm.GetFloat("Scale image", "Scale factor", "1,0",
+                0.001f, 100f, "Scale factor must be between 0.01 and 100");
+            if (angle == float.NaN)
+                return;
 
+            CurrentBm = CurrentBm.Scale(angle, _interpolationMode);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuGeometryStretch_Click(object sender, EventArgs e)

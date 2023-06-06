@@ -60,6 +60,24 @@ namespace image_processor
             return result;
         }
 
+        public static Bitmap Scale(this Bitmap bm, float scale, InterpolationMode mode) =>
+            Scale(bm, scale, scale, mode);
 
+        public static Bitmap Scale(this Bitmap bm, float scaleX, float scaleY, 
+            InterpolationMode mode)
+        {
+            int width = (int)(scaleX * bm.Width);
+            int height = (int)(scaleY * bm.Height);
+            var result = new Bitmap(width, height);
+
+            Graphics g = Graphics.FromImage(result);
+            g.InterpolationMode = mode;
+            g.DrawImage(bm, new[] {
+                new Point(0, 0),
+                new Point(width, 0),
+                new Point(0, height)});
+
+            return result;
+        }
     }
 }
