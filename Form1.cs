@@ -281,7 +281,11 @@ namespace image_processor
             resultPictureBox.MouseMove -= crop_MouseMove;
             resultPictureBox.Paint -= resultPictureBox_Paint;
 
-            CurrentBm = CurrentBm.Crop(Selection, _interpolationMode);
+            var selection = Selection;
+            if (selection.Size.IsEmpty)
+                return;
+
+            CurrentBm = CurrentBm.Crop(selection, _interpolationMode);
             resultPictureBox.Image = CurrentBm;
         }
 

@@ -86,13 +86,14 @@ namespace image_processor
             var g = Graphics.FromImage(result);
             g.InterpolationMode = mode;
 
-            g.DrawImage(image, new[]
-            {
-                new Point(0, 0),
-                new Point(rect.Width, 0),
-                new Point(0, rect.Height)
-            },
-            rect, GraphicsUnit.Pixel);
+            g.DrawImage(image,
+                destPoints: new[] {
+                    new Point(0, 0),
+                    new Point(rect.Width, 0),
+                    new Point(0, rect.Height)
+                },
+                srcRect: rect,
+                srcUnit: GraphicsUnit.Pixel);
 
             return result;
         }
