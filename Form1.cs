@@ -196,8 +196,8 @@ namespace image_processor
         private void mnuGeometryStretch_Click(object sender, EventArgs e)
         {
             var scales = InputForm
-                .GetString("Stretch image", "Strech X, Y", "3, 2")
-                .Split(',')
+                .GetString("Stretch image", "Stretch X, Y", "3; 2")
+                .Split(';')
                 .Select(s => float.Parse(s.Trim()))
                 .ToArray();
 
