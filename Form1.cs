@@ -24,6 +24,8 @@ namespace image_processor
         private Bitmap OriginalBm = null;
         private Bitmap CurrentBm = null;
 
+        private Point SelectionStart, SelectionEnd;
+
         private void Form1_Load(object sender, EventArgs e)
         {
             // Disable menu items because no image is loaded.
@@ -243,7 +245,44 @@ namespace image_processor
         // Let the user select an area and crop to that area.
         private void mnuGeometryCrop_Click(object sender, EventArgs e)
         {
+            resultPictureBox.MouseDown += crop_MouseDown;
+            resultPictureBox.Cursor = Cursors.Cross;
 
+        }
+
+        private void crop_MouseDown(object sender, MouseEventArgs e)
+        {
+            resultPictureBox.MouseDown -= crop_MouseDown;
+            resultPictureBox.MouseUp += crop_MouseUp;
+            resultPictureBox.MouseMove += crop_MouseMove;
+            resultPictureBox.Paint += resultPictureBox_Paint;
+
+            SelectionStart = e.Location;
+            SelectionEnd = e.Location;
+        }
+
+        private Rectangle Selection => SelectionStart.ToRectangle(SelectionEnd);
+
+        private void resultPictureBox_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.DrawDashedRectangle(Selection, Color.Red, Color.White, 1, 2);
+        }
+
+        private void crop_MouseMove(object sender, MouseEventArgs e)
+        {
+            SelectionEnd = e.Location;
+            resultPictureBox.Refresh();
+        }
+
+        private void crop_MouseUp(object sender, MouseEventArgs e)
+        {
+            resultPictureBox.Cursor = Cursors.Default;
+            resultPictureBox.MouseUp -= crop_MouseUp;
+            resultPictureBox.MouseMove -= crop_MouseMove;
+            resultPictureBox.Paint -= resultPictureBox_Paint;
+
+            CurrentBm = CurrentBm.Crop(Selection, _interpolationMode);
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Let the user select an area with a desired
