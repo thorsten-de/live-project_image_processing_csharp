@@ -8,11 +8,14 @@ using System.Text;
 using System.Windows.Forms;
 
 using System.Drawing.Drawing2D;
+using System.Linq.Expressions;
 
 namespace image_processor
 {
     public partial class Form1 : Form
     {
+        private const InterpolationMode _interpolationMode = InterpolationMode.High;
+
         public Form1()
         {
             InitializeComponent();
@@ -20,6 +23,8 @@ namespace image_processor
 
         private Bitmap OriginalBm = null;
         private Bitmap CurrentBm = null;
+
+        private Point SelectionStart, SelectionEnd;
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -167,23 +172,72 @@ namespace image_processor
         // Rotate the image.
         private void mnuGeometryRotate_Click(object sender, EventArgs e)
         {
+            var angle = InputForm.GetFloat("Rotate image", "Rotation angle", 
+                "0", float.NegativeInfinity, float.PositiveInfinity, "Rotation angle must be a number");
+            if (angle == float.NaN)
+                return;
 
+            CurrentBm = CurrentBm.RotateAtCenter(angle, Color.Black, _interpolationMode); ;
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Scale the image uniformly.
         private void mnuGeometryScale_Click(object sender, EventArgs e)
         {
+            var angle = InputForm.GetFloat("Scale image", "Scale factor", "1,0",
+                0.001f, 100f, "Scale factor must be between 0.01 and 100");
+            if (angle == float.NaN)
+                return;
 
+            CurrentBm = CurrentBm.Scale(angle, _interpolationMode);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuGeometryStretch_Click(object sender, EventArgs e)
         {
+            var scales = InputForm
+                .GetString("Stretch image", "Stretch X, Y", "3; 2")
+                .Split(';')
+                .Select(s => float.Parse(s.Trim()))
+                .ToArray();
 
+            if (scales.Length < 2 || scales.Any(s => s <= 0))
+            {
+                MessageBox.Show("Two strech factors < 0 must be privided.", "Strech image", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            CurrentBm = CurrentBm.Scale(scales[0], scales[1], _interpolationMode);
+            resultPictureBox.Image = CurrentBm;
         }
+
+        private static readonly IDictionary<int, RotateFlipType> RotateFlipTypeSelections = new Dictionary<int, RotateFlipType>()
+        {
+            [1] = RotateFlipType.RotateNoneFlipX,
+            [2] = RotateFlipType.RotateNoneFlipY,
+            [3] = RotateFlipType.Rotate90FlipNone,
+            [4] = RotateFlipType.Rotate180FlipNone,
+            [5] = RotateFlipType.Rotate270FlipNone
+        };
 
         private void mnuGeometryRotateFlip_Click(object sender, EventArgs e)
         {
+            var labelText = new StringBuilder()
+                .AppendLine("1) Flip Horizontal")
+                .AppendLine("2) Flip Vertical")
+                .AppendLine("3) Rotate 90")
+                .AppendLine("4) Rotate 180")
+                .AppendLine("5) Rotate 270")
+                .ToString();
 
+            var selection = InputForm
+                .GetInt("Rotate/Flip", labelText, "1", 1, 5, "Select a number from 1 to 5");
+            
+            if (selection == int.MinValue)
+                return;
+
+            CurrentBm.RotateFlip(RotateFlipTypeSelections[selection]);
+            resultPictureBox.Image = CurrentBm;
         }
 
         #region Cropping
@@ -191,7 +245,48 @@ namespace image_processor
         // Let the user select an area and crop to that area.
         private void mnuGeometryCrop_Click(object sender, EventArgs e)
         {
+            resultPictureBox.MouseDown += crop_MouseDown;
+            resultPictureBox.Cursor = Cursors.Cross;
 
+        }
+
+        private void crop_MouseDown(object sender, MouseEventArgs e)
+        {
+            resultPictureBox.MouseDown -= crop_MouseDown;
+            resultPictureBox.MouseUp += crop_MouseUp;
+            resultPictureBox.MouseMove += crop_MouseMove;
+            resultPictureBox.Paint += resultPictureBox_Paint;
+
+            SelectionStart = e.Location;
+            SelectionEnd = e.Location;
+        }
+
+        private Rectangle Selection => SelectionStart.ToRectangle(SelectionEnd);
+
+        private void resultPictureBox_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.DrawDashedRectangle(Selection, Color.Red, Color.White, 1, 2);
+        }
+
+        private void crop_MouseMove(object sender, MouseEventArgs e)
+        {
+            SelectionEnd = e.Location;
+            resultPictureBox.Refresh();
+        }
+
+        private void crop_MouseUp(object sender, MouseEventArgs e)
+        {
+            resultPictureBox.Cursor = Cursors.Default;
+            resultPictureBox.MouseUp -= crop_MouseUp;
+            resultPictureBox.MouseMove -= crop_MouseMove;
+            resultPictureBox.Paint -= resultPictureBox_Paint;
+
+            var selection = Selection;
+            if (selection.Size.IsEmpty)
+                return;
+
+            CurrentBm = CurrentBm.Crop(selection, _interpolationMode);
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Let the user select an area with a desired
