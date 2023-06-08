@@ -209,9 +209,33 @@ namespace image_processor
             resultPictureBox.Image = CurrentBm;
         }
 
+        private static readonly IDictionary<int, RotateFlipType> RotateFlipTypeSelections = new Dictionary<int, RotateFlipType>()
+        {
+            [1] = RotateFlipType.RotateNoneFlipX,
+            [2] = RotateFlipType.RotateNoneFlipY,
+            [3] = RotateFlipType.Rotate90FlipNone,
+            [4] = RotateFlipType.Rotate180FlipNone,
+            [5] = RotateFlipType.Rotate270FlipNone
+        };
+
         private void mnuGeometryRotateFlip_Click(object sender, EventArgs e)
         {
+            var labelText = new StringBuilder()
+                .AppendLine("1) Flip Horizontal")
+                .AppendLine("2) Flip Vertical")
+                .AppendLine("3) Rotate 90")
+                .AppendLine("4) Rotate 180")
+                .AppendLine("5) Rotate 270")
+                .ToString();
 
+            var selection = InputForm
+                .GetInt("Rotate/Flip", labelText, "1", 1, 5, "Select a number from 1 to 5");
+            
+            if (selection == int.MinValue)
+                return;
+
+            CurrentBm.RotateFlip(RotateFlipTypeSelections[selection]);
+            resultPictureBox.Image = CurrentBm;
         }
 
         #region Cropping
