@@ -126,14 +126,16 @@ namespace image_processor
 
         public static void ApplyPointOp(this Bitmap bm, PointOp op)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             Bitmap32 bm32 = new Bitmap32(bm);
             bm32.LockBitmap();
 
             int height = bm.Height;
             int width = bm.Width;
-            Parallel.For(0, width, x =>
+            Parallel.For(0, height, y =>
             {
-                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
                 {
                     bm32.GetPixel(x, y, out byte r, out byte b, out byte g, out byte a);
                     op(ref r, ref g, ref b, ref a);
@@ -142,6 +144,9 @@ namespace image_processor
             });
 
             bm32.UnlockBitmap();
+
+            stopwatch.Stop();
+            Debug.WriteLine($"PointOperation done in {stopwatch.ElapsedMilliseconds} ms");
         }
 
         public static void ApplyPointMatrix(this Bitmap bm, float[] m)
