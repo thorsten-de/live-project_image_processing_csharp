@@ -336,31 +336,45 @@ namespace image_processor
         // Set each pixel's red color component to 0.
         private void mnuPointClearRed_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) => r = 0);
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Set each pixel's green color component to 0.
         private void mnuPointClearGreen_Click(object sender, EventArgs e)
         {
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) => g = 0);
+            resultPictureBox.Image = CurrentBm;
 
         }
 
         // Set each pixel's blue color component to 0.
         private void mnuPointClearBlue_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) => b = 0);
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Average each pixel's color component.
         private void mnuPointAverage_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                byte avg = (byte)((r + g + b) / 3);
+                r = b = g = avg;
+            });
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Convert each pixel to grayscale.
         private void mnuPointGrayscale_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                byte avg = (byte)(r * 0.2126 + g * 0.7152 + b * 0.0722);
+                r = b = g = avg;
+            });
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Convert each pixel to sepia tone.
