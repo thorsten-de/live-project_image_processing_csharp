@@ -395,7 +395,22 @@ namespace image_processor
         // Apply a color tone to the image.
         private void mnuPointColorTone_Click(object sender, EventArgs e)
         {
+            if (cdColorTone.ShowDialog() == DialogResult.OK)
+            {
+                float newR = cdColorTone.Color.R;
+                float newG = cdColorTone.Color.G;
+                float newB = cdColorTone.Color.B;
 
+                CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+                {
+                    float brightness = (r + g + b) / (3f * 255f);
+                    r = (byte)(brightness * newR);
+                    g = (byte)(brightness * newG);
+                    b = (byte)(brightness * newB);
+                });
+            }
+
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Set non-maximal color components to 0.
