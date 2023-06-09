@@ -9,6 +9,7 @@ using System.Windows.Forms;
 
 using System.Drawing.Drawing2D;
 using System.Linq.Expressions;
+using System.Drawing.Text;
 
 namespace image_processor
 {
@@ -316,6 +317,20 @@ namespace image_processor
         private void mnuPointColorCutoff_Click(object sender, EventArgs e)
         {
 
+            int cutoff = InputForm.GetInt("Cutoff", "Specify cutoff value:", "128", 0, 255,
+                "Specify a cutoff value in [0,255]");
+
+            if (cutoff == int.MinValue)
+                return;
+
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                if (r < cutoff) r = 0;
+                if (g < cutoff) g = 0;
+                if (b < cutoff) b = 0;
+            });
+
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Set each pixel's red color component to 0.

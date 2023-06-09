@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 
 namespace image_processor
 {
+    public delegate void PointOp(ref byte r, ref byte g, ref byte b, ref byte a);
+
     public static class Extensions
     {
         // Save the file with the appropriate format.
@@ -121,7 +123,6 @@ namespace image_processor
 
         #region point operations
 
-        public delegate void PointOp(ref byte r, ref byte g, ref byte b, ref byte a);
 
         public static void ApplyPointOp(this Bitmap bm, PointOp op)
         {
