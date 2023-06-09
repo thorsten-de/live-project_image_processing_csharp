@@ -303,7 +303,13 @@ namespace image_processor
         // Set each color component to 255 - the original value.
         private void mnuPointInvert_Click(object sender, EventArgs e)
         {
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) => {
+                r = (byte)(255 - r);
+                g = (byte)(255 - g);
+                b = (byte)(255 - b);
+            });
 
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Set color components less than a specified value to 0.

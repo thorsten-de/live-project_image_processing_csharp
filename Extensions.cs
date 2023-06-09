@@ -8,6 +8,8 @@ using System.IO;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Diagnostics;
+using ImageProcessor;
+using System.Threading.Tasks;
 
 namespace image_processor
 {
@@ -98,7 +100,7 @@ namespace image_processor
             return result;
         }
 
-        public static void DrawDashedRectangle(this Graphics g, Rectangle rect, Color color1, Color color2, 
+        public static void DrawDashedRectangle(this Graphics g, Rectangle rect, Color color1, Color color2,
             float thickness, float dashSize)
         {
             using (Pen pen = new Pen(color1, thickness))
@@ -116,5 +118,31 @@ namespace image_processor
             Math.Min(origin.Y, other.Y),
             Math.Abs(other.X - origin.X),
             Math.Abs(other.Y - origin.Y));
+
+        #region point operations
+
+        public delegate void PointOp(ref byte r, ref byte g, ref byte b, ref byte a);
+
+        public static void ApplyPointOp(this Bitmap bm, PointOp op)
+        {
+            Bitmap32 bm32 = new Bitmap32(bm);
+            bm32.LockBitmap();
+
+            int height = bm.Height;
+            int width = bm.Width;
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    bm32.GetPixel(x, y, out byte r, out byte b, out byte g, out byte a);
+                    op(ref r, ref g, ref b, ref a);
+                    bm32.SetPixel(x, y, r, g, b, a);
+                }
+            });
+
+            bm32.UnlockBitmap();
+        }
+
+        #endregion
     }
 }
