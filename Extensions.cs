@@ -144,6 +144,19 @@ namespace image_processor
             bm32.UnlockBitmap();
         }
 
+        public static void ApplyPointMatrix(this Bitmap bm, float[] m)
+        {
+            bm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                float newR = r * m[0] + g * m[1] + b * m[2];
+                float newG = r * m[3] + g * m[4] + b * m[5];
+                float newB = r * m[6] + g * m[7] + b * m[8];
+                r = (byte)Math.Min(255, (int)newR);
+                g = (byte)Math.Min(255, (int)newG);
+                b = (byte)Math.Min(255, (int)newB);
+            });
+        }
+
         #endregion
     }
 }

@@ -377,10 +377,19 @@ namespace image_processor
             resultPictureBox.Image = CurrentBm;
         }
 
+        private static readonly float[] sepiaMatrix = new float[]
+        {
+            0.293f, 0.769f, 0.189f,
+            0.349f, 0.686f, 0.168f,
+            0.272f, 0.534f, 0.131f
+        };
+
         // Convert each pixel to sepia tone.
         private void mnuPointSepiaTone_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointMatrix(sepiaMatrix);
+         
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Apply a color tone to the image.
