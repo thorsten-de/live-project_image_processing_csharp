@@ -9,6 +9,7 @@ using System.Windows.Forms;
 
 using System.Drawing.Drawing2D;
 using System.Linq.Expressions;
+using System.Drawing.Text;
 
 namespace image_processor
 {
@@ -303,61 +304,129 @@ namespace image_processor
         // Set each color component to 255 - the original value.
         private void mnuPointInvert_Click(object sender, EventArgs e)
         {
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) => {
+                r = (byte)(255 - r);
+                g = (byte)(255 - g);
+                b = (byte)(255 - b);
+            });
 
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Set color components less than a specified value to 0.
         private void mnuPointColorCutoff_Click(object sender, EventArgs e)
         {
 
+            int cutoff = InputForm.GetInt("Cutoff", "Specify cutoff value:", "128", 0, 255,
+                "Specify a cutoff value in [0,255]");
+
+            if (cutoff == int.MinValue)
+                return;
+
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                if (r < cutoff) r = 0;
+                if (g < cutoff) g = 0;
+                if (b < cutoff) b = 0;
+            });
+
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Set each pixel's red color component to 0.
         private void mnuPointClearRed_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) => r = 0);
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Set each pixel's green color component to 0.
         private void mnuPointClearGreen_Click(object sender, EventArgs e)
         {
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) => g = 0);
+            resultPictureBox.Image = CurrentBm;
 
         }
 
         // Set each pixel's blue color component to 0.
         private void mnuPointClearBlue_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) => b = 0);
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Average each pixel's color component.
         private void mnuPointAverage_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                byte avg = (byte)((r + g + b) / 3);
+                r = b = g = avg;
+            });
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Convert each pixel to grayscale.
         private void mnuPointGrayscale_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                byte avg = (byte)(r * 0.2126 + g * 0.7152 + b * 0.0722);
+                r = b = g = avg;
+            });
+            resultPictureBox.Image = CurrentBm;
         }
+
+        private static readonly float[] sepiaMatrix = new float[]
+        {
+            0.293f, 0.769f, 0.189f,
+            0.349f, 0.686f, 0.168f,
+            0.272f, 0.534f, 0.131f
+        };
 
         // Convert each pixel to sepia tone.
         private void mnuPointSepiaTone_Click(object sender, EventArgs e)
         {
-
+            CurrentBm.ApplyPointMatrix(sepiaMatrix);
+         
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Apply a color tone to the image.
         private void mnuPointColorTone_Click(object sender, EventArgs e)
         {
+            if (cdColorTone.ShowDialog() == DialogResult.OK)
+            {
+                float newR = cdColorTone.Color.R;
+                float newG = cdColorTone.Color.G;
+                float newB = cdColorTone.Color.B;
 
+                CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+                {
+                    float brightness = (r + g + b) / (3f * 255f);
+                    r = (byte)(brightness * newR);
+                    g = (byte)(brightness * newG);
+                    b = (byte)(brightness * newB);
+                });
+            }
+
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Set non-maximal color components to 0.
         private void mnuPointSaturate_Click(object sender, EventArgs e)
         {
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                int max = new int[] { r, g, b }
+                    .Max();
 
+                if (r < max) r = 0;
+                if (g < max) g = 0;
+                if (b < max) b = 0;
+            });
+
+            resultPictureBox.Image = CurrentBm;
         }
 
         #endregion Point Processes
