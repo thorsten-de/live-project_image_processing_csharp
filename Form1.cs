@@ -416,7 +416,17 @@ namespace image_processor
         // Set non-maximal color components to 0.
         private void mnuPointSaturate_Click(object sender, EventArgs e)
         {
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                int max = new int[] { r, g, b }
+                    .Max();
 
+                if (r < max) r = 0;
+                if (g < max) g = 0;
+                if (b < max) b = 0;
+            });
+
+            resultPictureBox.Image = CurrentBm;
         }
 
         #endregion Point Processes
