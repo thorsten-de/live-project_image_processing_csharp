@@ -435,6 +435,22 @@ namespace image_processor
 
         private void mnuEnhancementsColor_Click(object sender, EventArgs e)
         {
+            float factor = InputForm.GetFloat(
+              "Color",
+              "Saturation factor:",
+              "1,5", 0f, 2f,
+              "The saturation factor should be a floating point number beween 0.0 and 2.0");
+
+            if (float.IsNaN(factor))
+                return;
+
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                HSL hsl = HSL.FromRgb(r, g, b);
+                hsl.S = hsl.S.AdjustValue(factor);
+                hsl.ToRgb(out r, out g, out b);
+            });
+            resultPictureBox.Refresh();
 
         }
 
@@ -446,7 +462,22 @@ namespace image_processor
 
         private void mnuEnhancementsBrightness_Click(object sender, EventArgs e)
         {
+            float factor = InputForm.GetFloat(
+                "Brigtness",
+                "Brightness factor:",
+                "1,5", 0f, 2f,
+                "The brightness factor should be a floating point number beween 0.0 and 2.0");
 
+            if (float.IsNaN(factor))
+                return;
+
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                HSL hsl = HSL.FromRgb(r, g, b);
+                hsl.L = hsl.L.AdjustValue(factor);
+                hsl.ToRgb(out r, out g, out b);
+            });
+            resultPictureBox.Refresh();
         }
 
         #endregion Enhancements

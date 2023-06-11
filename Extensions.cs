@@ -163,5 +163,13 @@ namespace image_processor
         }
 
         #endregion
+
+        public static float AdjustValue(this float value, float factor)
+        {
+            if (value < 1) return value * factor;
+
+            return 1 - (1 - value) * 2f * factor;
+        }
     }
+
 }
