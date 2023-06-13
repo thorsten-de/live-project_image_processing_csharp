@@ -34,7 +34,7 @@ namespace image_processor
 
 
             float H = 0;
-            if (C != 0)
+            if (Math.Abs(C) > 0.0001)
             {
                 if (xMax == r)
                 {
@@ -64,9 +64,9 @@ namespace image_processor
             float a = S * Math.Min(L, 1 - L);
             return L - a * Math.Max(-1, Math.Min(Math.Min(k - 3, 9 - k), 1));
         }
-
+     
         public static byte ToByte(float f) =>
-            f < 0 ? (byte)0 : (byte)(Math.Min(255, Math.Round(f * 255f)));
+            f < 0 ? (byte)0 : (byte)(Math.Min(255f, Math.Round(f * 255f)));
 
         public static float ByteToFloat(byte b) => b / 255f;
     }

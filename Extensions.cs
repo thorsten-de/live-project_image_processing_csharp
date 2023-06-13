@@ -166,9 +166,9 @@ namespace image_processor
 
         public static float AdjustValue(this float value, float factor)
         {
-            if (value < 1) return value * factor;
+            if (factor < 1) return value * factor;
 
-            return 1 - (1 - value) * 2f * factor;
+            return 1 - (1 - value) * (2f - factor);
         }
     }
 
