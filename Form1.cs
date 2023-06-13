@@ -435,18 +435,71 @@ namespace image_processor
 
         private void mnuEnhancementsColor_Click(object sender, EventArgs e)
         {
+            float factor = InputForm.GetFloat(
+              "Color",
+              "Saturation factor:",
+              "1,5", 0f, 2f,
+              "The saturation factor should be a floating point number beween 0.0 and 2.0");
+
+            if (float.IsNaN(factor))
+                return;
+
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                HSL hsl = HSL.FromRgb(r, g, b);
+                hsl.S = hsl.S.AdjustValue(factor);
+                hsl.ToRgb(out r, out g, out b);
+            });
+            resultPictureBox.Refresh();
 
         }
 
         // Use histogram stretching to modify contrast.
         private void mnuEnhancementsContrast_Click(object sender, EventArgs e)
         {
+            float factor = InputForm.GetFloat(
+               "Contrast",
+               "Contrast factor:",
+               "1,5", 0f, 2f,
+               "The brightness factor should be > 0.0");
 
+            if (float.IsNaN(factor) || factor <= 0)
+                return;
+
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                r = ToByte(128 + (r - 128) * factor);
+                g = ToByte(128 + (g - 128) * factor);
+                b = ToByte(128 + (b - 128) * factor);
+            });
+            resultPictureBox.Refresh();
+        }
+
+        private byte ToByte(float f)
+        {
+            if (f< 0) return (byte)0;
+            if (f > 255) return (byte)255;
+            return (byte)Math.Round(f);
         }
 
         private void mnuEnhancementsBrightness_Click(object sender, EventArgs e)
         {
+            float factor = InputForm.GetFloat(
+                "Brigtness",
+                "Brightness factor:",
+                "1,5", 0f, 2f,
+                "The brightness factor should be a floating point number beween 0.0 and 2.0");
 
+            if (float.IsNaN(factor))
+                return;
+
+            CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
+            {
+                HSL hsl = HSL.FromRgb(r, g, b);
+                hsl.L = hsl.L.AdjustValue(factor);
+                hsl.ToRgb(out r, out g, out b);
+            });
+            resultPictureBox.Refresh();
         }
 
         #endregion Enhancements
