@@ -508,7 +508,13 @@ namespace image_processor
 
         private void mnuFiltersBoxBlur_Click(object sender, EventArgs e)
         {
+            int radius = InputForm.GetInt(
+                "Box Blur Filter", "Radius", "1", 1, 100, "Radius is an int between 1 and 100");
 
+            if (radius < 0) return;
+
+            CurrentBm = CurrentBm.BoxBlur(radius);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuFiltersUnsharpMask_Click(object sender, EventArgs e)

@@ -8,8 +8,8 @@ using System.IO;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Diagnostics;
-using ImageProcessor;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace image_processor
 {
@@ -127,23 +127,20 @@ namespace image_processor
         public static void ApplyPointOp(this Bitmap bm, PointOp op)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-
-            Bitmap32 bm32 = new Bitmap32(bm);
-            bm32.LockBitmap();
-
-            int height = bm.Height;
-            int width = bm.Width;
-            Parallel.For(0, height, y =>
+            using (Bitmap32 bm32 = bm.UseLockedData())
             {
-                for (int x = 0; x < width; x++)
+                int height = bm.Height;
+                int width = bm.Width;
+                Parallel.For(0, height, y =>
                 {
-                    bm32.GetPixel(x, y, out byte r, out byte b, out byte g, out byte a);
-                    op(ref r, ref g, ref b, ref a);
-                    bm32.SetPixel(x, y, r, g, b, a);
-                }
-            });
-
-            bm32.UnlockBitmap();
+                    for (int x = 0; x < width; x++)
+                    {
+                        bm32.GetPixel(x, y, out byte r, out byte g, out byte b, out byte a);
+                        op(ref r, ref g, ref b, ref a);
+                        bm32.SetPixel(x, y, r, g, b, a);
+                    }
+                });
+            }
 
             stopwatch.Stop();
             Debug.WriteLine($"PointOperation done in {stopwatch.ElapsedMilliseconds} ms");
@@ -164,11 +161,110 @@ namespace image_processor
 
         #endregion
 
+        #region Kernel operations
+
+        public static Bitmap ApplyKernel(this Bitmap bm, float[,] kernel, float weight, float offset)
+        {
+            int height = bm.Height;
+            int width = bm.Width;
+            int kernelWidth = kernel.GetLength(0);
+            int kernelHeight = kernel.GetLength(1);
+
+            byte weigthPixel(float value)
+            {
+                float c = value * weight + offset;
+                if (c < 0) return 0;
+                if (c > 255) return 255;
+                return (byte)Math.Round(c);
+            }
+
+            void getPixel(Bitmap32 source, int x, int y, out byte r, out byte g, out byte b)
+            {
+                int px = x, py = y;
+
+                if (px < 0) px = 0;
+                if (px >= width) px = width - 1;
+
+                if (py < 0) py = 0;
+                if (py >= height) py = height - 1;
+
+                source.GetPixel(px, py, out r, out g, out b, out byte _);
+            }
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Bitmap result = new Bitmap(width, height);
+            using (Bitmap32 source = bm.UseLockedData(), target = result.UseLockedData())
+            {
+                Parallel.For(0, height, y =>
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        float sumR = 0, sumG = 0, sumB = 0;
+                        source.GetPixel(x, y, out _, out _, out _, out byte a);
+
+                        for (int ky = 0; ky < kernelHeight; ky++)
+                        {
+                            for (int kx = 0; kx < kernelWidth; kx++)
+                            {
+                                getPixel(source,
+                                    x - kernelWidth / 2 + kx,
+                                    y - kernelHeight / 2 + ky,
+                                    out byte r, out byte g, out byte b);
+
+                                sumR += r * kernel[kx, ky];
+                                sumG += g * kernel[kx, ky];
+                                sumB += b * kernel[kx, ky];
+                            }
+                        }
+
+                        source.SetPixel(x, y,
+                            weigthPixel(sumR),
+                            weigthPixel(sumG),
+                            weigthPixel(sumB),
+                            a
+                            );
+                    }
+                });
+            }
+            
+            stopwatch.Stop();
+            Debug.WriteLine($"KernelOperation done in {stopwatch.ElapsedMilliseconds} ms");
+
+            return bm;
+        }
+
+        public static float[,] OnesArray(int radius)
+        {
+            int width = 2 * radius + 1;
+            float[,] result = new float[width, width];
+            for (int y = 0; y < width; y++)
+                for (int x = 0; x < width; x++)
+                    result[x, y] = 1f;
+
+            return result;
+        }
+
+        public static Bitmap BoxBlur(this Bitmap bm, int radius)
+        {
+            var kernel = OnesArray(radius);
+            return bm.ApplyKernel(kernel, 1f / kernel.Length, 0);
+        }
+
+        #endregion
+
         public static float AdjustValue(this float value, float factor)
         {
             if (factor < 1) return value * factor;
 
             return 1 - (1 - value) * (2f - factor);
+        }
+
+
+        private static Bitmap32 UseLockedData(this Bitmap bm)
+        {
+            Bitmap32 bm32 = new Bitmap32(bm);
+            bm32.LockBitmap();
+            return bm32;
         }
     }
 
