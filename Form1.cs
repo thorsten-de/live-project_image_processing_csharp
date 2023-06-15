@@ -468,18 +468,11 @@ namespace image_processor
 
             CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
             {
-                r = ToByte(128 + (r - 128) * factor);
-                g = ToByte(128 + (g - 128) * factor);
-                b = ToByte(128 + (b - 128) * factor);
+                r = (128 + (r - 128) * factor).ToByte();
+                g = (128 + (g - 128) * factor).ToByte();
+                b = (128 + (b - 128) * factor).ToByte();
             });
             resultPictureBox.Refresh();
-        }
-
-        private byte ToByte(float f)
-        {
-            if (f< 0) return (byte)0;
-            if (f > 255) return (byte)255;
-            return (byte)Math.Round(f);
         }
 
         private void mnuEnhancementsBrightness_Click(object sender, EventArgs e)

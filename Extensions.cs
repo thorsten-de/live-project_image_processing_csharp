@@ -158,6 +158,20 @@ namespace image_processor
                 b = (byte)Math.Min(255, (int)newB);
             });
         }
+        
+        public static byte ToByte(this float f)
+        {
+            if (f< 0) return 0;
+            if (f > 255) return 255;
+            return (byte)Math.Round(f);
+        }
+
+        public static byte ToByte(this int i)
+        {
+            if (i < 0) return 0;
+            if (i > 255) return 255;
+            return (byte)i;
+        }
 
         #endregion
 
@@ -172,10 +186,7 @@ namespace image_processor
 
             byte weigthPixel(float value)
             {
-                float c = value * weight + offset;
-                if (c < 0) return 0;
-                if (c > 255) return 255;
-                return (byte)Math.Round(c);
+                return (value * weight + offset).ToByte();
             }
 
             void getPixel(Bitmap32 source, int x, int y, out byte r, out byte g, out byte b)
