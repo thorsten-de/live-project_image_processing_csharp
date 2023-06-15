@@ -181,8 +181,8 @@ namespace image_processor
         {
             int height = bm.Height;
             int width = bm.Width;
-            int kernelWidth = kernel.GetLength(0);
-            int kernelHeight = kernel.GetLength(1);
+            int xRadius = kernel.GetLength(0) / 2;
+            int yRadius = kernel.GetLength(1) / 2;
 
             Bitmap32 source = new Bitmap32(bm);
 
@@ -217,18 +217,16 @@ namespace image_processor
                         float sumR = 0, sumG = 0, sumB = 0;
                         source.GetPixel(x, y, out _, out _, out _, out byte a);
 
-                        for (int ky = 0; ky < kernelHeight; ky++)
+                        for (int ky = -yRadius; ky <= yRadius; ky++)
                         {
-                            for (int kx = 0; kx < kernelWidth; kx++)
+                            for (int kx = -xRadius; kx <= xRadius; kx++)
                             {
-                                getPixel(
-                                    x - kernelWidth / 2 + kx,
-                                    y - kernelHeight / 2 + ky,
-                                    out byte r, out byte g, out byte b);
+                                getPixel(x + kx, y + ky, out byte r, out byte g, out byte b);
 
-                                sumR += r * kernel[kx, ky];
-                                sumG += g * kernel[kx, ky];
-                                sumB += b * kernel[kx, ky];
+                                float scale = kernel[kx + xRadius, ky + xRadius];
+                                sumR += r * scale;
+                                sumG += g * scale;
+                                sumB += b * scale;
                             }
                         }
 
@@ -236,8 +234,7 @@ namespace image_processor
                             weigthPixel(sumR),
                             weigthPixel(sumG),
                             weigthPixel(sumB),
-                            a
-                            );
+                            a);
                     }
                 });
             }
@@ -281,18 +278,16 @@ namespace image_processor
         {
             int height = bm.Height;
             int width = bm.Width;
-            int kernelWidth = xRadius * 2 + 1;
-            int kernelHeight = yRadius * 2 + 1;
             Bitmap32 source = new Bitmap32(bm);
 
             IEnumerable<PixelData> WindowFunction(int x, int y)
             {
-                for (int ky = 0; ky < kernelHeight; ky++)
+                for (int ky = y - yRadius; ky <= y + yRadius ; ky++)
                 {
-                    for (int kx = 0; kx < kernelWidth; kx++)
+                    for (int kx = x - xRadius; kx <= x + xRadius; kx++)
                     {
-                        int px = x - xRadius + kx;
-                        int py = y - yRadius + ky;
+                        int px = kx;
+                        int py = ky;
 
                         if (px < 0) px = 0;
                         if (px >= width) px = width - 1;
