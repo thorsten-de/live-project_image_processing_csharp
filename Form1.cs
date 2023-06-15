@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using System.Linq.Expressions;
 using System.Drawing.Text;
+using System.Runtime.InteropServices;
 
 namespace image_processor
 {
@@ -537,22 +538,56 @@ namespace image_processor
 
         private void mnuFiltersRankFilter_Click(object sender, EventArgs e)
         {
+            var values = InputForm
+                .GetString("Rank filter", "Radius and Rank", "2; 2")
+                .Split(';')
+                .Select(s => int.Parse(s.Trim()))
+                .ToArray();
+
+            if (values.Length < 2 || values.Any(v => v < 0))
+            {
+                MessageBox.Show("Two integer values >= 0 must be provided.", "Rank filter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int radius = values[0];
+            int rank = values[1];
+
+            CurrentBm = CurrentBm.RankFilter(radius, radius, rank);
+            resultPictureBox.Image = CurrentBm;
 
         }
 
         private void mnuFiltersMedianFilter_Click(object sender, EventArgs e)
         {
+            int radius = InputForm
+                .GetInt("Median filter", "Radius", "2", 1, 100, "Radius must be an integer between 1 and 100");
 
+            int width = radius * 2 + 1;
+            int median = (width * width) / 2;
+            CurrentBm = CurrentBm.RankFilter(radius, radius, median);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuFiltersMinFilter_Click(object sender, EventArgs e)
         {
+            int radius = InputForm
+                .GetInt("Min filter", "Radius", "1", 1, 100, "Radius must be an integer between 1 and 100");
 
+            int min =0;
+            CurrentBm = CurrentBm.RankFilter(radius, radius, min);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuFiltersMaxFilter_Click(object sender, EventArgs e)
         {
+            int radius = InputForm
+                .GetInt("Max filter", "Radius", "1", 1, 100, "Radius must be an integer between 1 and 100");
 
+            int width = radius * 2 + 1;
+            int max = (width * width) - 1;
+            CurrentBm = CurrentBm.RankFilter(radius, radius, max);
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Display a dialog where the user can select

@@ -158,10 +158,10 @@ namespace image_processor
                 b = (byte)Math.Min(255, (int)newB);
             });
         }
-        
+
         public static byte ToByte(this float f)
         {
-            if (f< 0) return 0;
+            if (f < 0) return 0;
             if (f > 255) return 255;
             return (byte)Math.Round(f);
         }
@@ -184,12 +184,14 @@ namespace image_processor
             int kernelWidth = kernel.GetLength(0);
             int kernelHeight = kernel.GetLength(1);
 
+            Bitmap32 source = new Bitmap32(bm);
+
             byte weigthPixel(float value)
             {
                 return (value * weight + offset).ToByte();
             }
 
-            void getPixel(Bitmap32 source, int x, int y, out byte r, out byte g, out byte b)
+            void getPixel(int x, int y, out byte r, out byte g, out byte b)
             {
                 int px = x, py = y;
 
@@ -203,8 +205,10 @@ namespace image_processor
             }
 
             Stopwatch stopwatch = Stopwatch.StartNew();
+            source.LockBitmap();
             Bitmap result = new Bitmap(width, height);
-            using (Bitmap32 source = bm.UseLockedData(), target = result.UseLockedData())
+            
+            using (Bitmap32 target = result.UseLockedData())
             {
                 Parallel.For(0, height, y =>
                 {
@@ -217,7 +221,7 @@ namespace image_processor
                         {
                             for (int kx = 0; kx < kernelWidth; kx++)
                             {
-                                getPixel(source,
+                                getPixel(
                                     x - kernelWidth / 2 + kx,
                                     y - kernelHeight / 2 + ky,
                                     out byte r, out byte g, out byte b);
@@ -236,12 +240,12 @@ namespace image_processor
                             );
                     }
                 });
-
             }
-            
+
+            source.UnlockBitmap();
+
             stopwatch.Stop();
             Debug.WriteLine($"KernelOperation done in {stopwatch.ElapsedMilliseconds} ms");
-
             return result;
         }
 
@@ -272,6 +276,63 @@ namespace image_processor
 
             return result.Bitmap;
         }
+
+        public static Bitmap RankFilter(this Bitmap bm, int xRadius, int yRadius, int rank)
+        {
+            int height = bm.Height;
+            int width = bm.Width;
+            int kernelWidth = xRadius * 2 + 1;
+            int kernelHeight = yRadius * 2 + 1;
+            Bitmap32 source = new Bitmap32(bm);
+
+            IEnumerable<PixelData> WindowFunction(int x, int y)
+            {
+                for (int ky = 0; ky < kernelHeight; ky++)
+                {
+                    for (int kx = 0; kx < kernelWidth; kx++)
+                    {
+                        int px = x - xRadius + kx;
+                        int py = y - yRadius + ky;
+
+                        if (px < 0) px = 0;
+                        if (px >= width) px = width - 1;
+
+                        if (py < 0) py = 0;
+                        if (py >= height) py = height - 1;
+                        source.GetPixel(px, py, out byte r, out byte g, out byte b, out byte a);
+                        yield return new PixelData(r, g, b, a);
+                    }
+                }
+            }
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            source.LockBitmap();
+
+            Bitmap result = new Bitmap(width, height);
+            using (Bitmap32 target = result.UseLockedData())
+            {
+                Parallel.For(0, height, y =>
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        var pixel = 
+                            WindowFunction(x, y)
+                            .OrderBy(pd => pd.Brightness)
+                            .ElementAt(rank);
+
+                        target.SetPixel(x, y, pixel.R, pixel.G, pixel.B, pixel.A);
+                    }
+                });
+
+            }
+
+            source.UnlockBitmap();
+
+            stopwatch.Stop();
+            Debug.WriteLine($"RankOperation done in {stopwatch.ElapsedMilliseconds} ms");
+            return result;
+        }
+
         #endregion
 
         public static float AdjustValue(this float value, float factor)
@@ -280,7 +341,6 @@ namespace image_processor
 
             return 1 - (1 - value) * (2f - factor);
         }
-
 
         private static Bitmap32 UseLockedData(this Bitmap bm)
         {
