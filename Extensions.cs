@@ -228,7 +228,7 @@ namespace image_processor
                             }
                         }
 
-                        source.SetPixel(x, y,
+                        target.SetPixel(x, y,
                             weigthPixel(sumR),
                             weigthPixel(sumG),
                             weigthPixel(sumB),
@@ -236,12 +236,13 @@ namespace image_processor
                             );
                     }
                 });
+
             }
             
             stopwatch.Stop();
             Debug.WriteLine($"KernelOperation done in {stopwatch.ElapsedMilliseconds} ms");
 
-            return bm;
+            return result;
         }
 
         public static float[,] OnesArray(int radius)
@@ -261,6 +262,16 @@ namespace image_processor
             return bm.ApplyKernel(kernel, 1f / kernel.Length, 0);
         }
 
+        // Unsharp masking via original + (original - blurred) * amount
+        public static Bitmap UnsharpMask(this Bitmap bm, int radius, float amount)
+        {
+            Bitmap32 original = new Bitmap32(bm);
+            Bitmap32 blurred = new Bitmap32(bm.BoxBlur(radius));
+
+            Bitmap32 result = original + (original - blurred) * amount;
+
+            return result.Bitmap;
+        }
         #endregion
 
         public static float AdjustValue(this float value, float factor)

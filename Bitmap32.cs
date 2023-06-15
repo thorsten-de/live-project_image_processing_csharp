@@ -3,6 +3,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace image_processor
 {
@@ -159,6 +160,75 @@ namespace image_processor
         public void Dispose()
         {
             UnlockBitmap();
+        }
+
+        public static Bitmap32 operator -(Bitmap32 lhs, Bitmap32 rhs) =>
+            op(lhs, rhs, (l, r) => l - r);
+
+        public static Bitmap32 operator +(Bitmap32 lhs, Bitmap32 rhs) =>
+            op(lhs, rhs, (l, r) => l + r);
+
+
+        private static Bitmap32 op(Bitmap32 lhs, Bitmap32 rhs, Func<byte, byte, int> op)
+        {
+            int width = Math.Min(lhs.Width, rhs.Width);
+            int height = Math.Min(lhs.Height, rhs.Height);
+
+            Bitmap bm = new Bitmap(width, height);
+            Bitmap32 target = new Bitmap32(bm);
+            lhs.LockBitmap();
+            rhs.LockBitmap();
+            target.LockBitmap();
+
+            Parallel.For(0, height, y =>
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    lhs.GetPixel(x, y, out byte r1, out byte g1, out byte b1, out byte a1);
+                    rhs.GetPixel(x, y, out byte r2, out byte g2, out byte b2, out byte a2);
+                    target.SetPixel(x, y,
+                        op(r1, r2).ToByte(),
+                        op(g1, g2).ToByte(),
+                        op(b1, b2).ToByte(),
+                        op(a1, a2).ToByte());
+                }
+            });
+
+            lhs.UnlockBitmap();
+            rhs.UnlockBitmap();
+            target.UnlockBitmap();
+            return target;
+        }
+
+        public static Bitmap32 operator *(float factor, Bitmap32 source) =>
+            source * factor;
+
+        public static Bitmap32 operator *(Bitmap32 source, float factor)
+        {
+            int width = source.Width;
+            int height = source.Height;
+
+            Bitmap bm = new Bitmap(width, height);
+            Bitmap32 target = new Bitmap32(bm);
+            source.LockBitmap();
+            target.LockBitmap();
+
+            Parallel.For(0, height, y =>
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    source.GetPixel(x, y, out byte r, out byte g, out byte b, out byte a);
+                    target.SetPixel(x, y,
+                        (r * factor).ToByte(),
+                        (g * factor).ToByte(),
+                        (b * factor).ToByte(),
+                        (b * factor).ToByte());
+                }
+            });
+
+            source.UnlockBitmap();
+            target.UnlockBitmap();
+            return target;
         }
     }
 }

@@ -512,7 +512,27 @@ namespace image_processor
 
         private void mnuFiltersUnsharpMask_Click(object sender, EventArgs e)
         {
+            var strValues = InputForm
+              .GetString("Unsharp mask filter", "Radius and Amount",  "2; 1")
+              .Split(';');
 
+            if (strValues.Length < 2)
+            {
+                MessageBox.Show("Two values must be provided.", "Unsharp Mask filter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!int.TryParse(strValues[0], out int radius) && (radius <= 0 || radius >= 100) ){
+                MessageBox.Show("Radius value must be an Integer between 1 and 100.", "Unsharp Mask filter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!float.TryParse(strValues[1], out float amount)) {
+                MessageBox.Show("Amount value must be a number", "Unsharp Mask filter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            CurrentBm = CurrentBm.UnsharpMask(radius, amount);
+            resultPictureBox.Image= CurrentBm;
         }
 
         private void mnuFiltersRankFilter_Click(object sender, EventArgs e)
