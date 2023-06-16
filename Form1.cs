@@ -595,6 +595,43 @@ namespace image_processor
         // If the user clicks OK, apply the kernel.
         private void mnuFiltersCustomKernel_Click(object sender, EventArgs e)
         {
+            var kernelForm = new KernelForm();
+            if (kernelForm.ShowDialog() == DialogResult.OK)
+            {
+                if (!float.TryParse(kernelForm.weightTextBox.Text, out float weight))
+                {
+                    MessageBox.Show("Weight must be a number.", "Custom Kernel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (!float.TryParse(kernelForm.offsetTextBox.Text, out float offset))
+                {
+                    MessageBox.Show("Offset must be a number.", "Custom Kernel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var kernelRows = kernelForm.valueTextBox.Text
+                    .Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(row => row.Split(','));
+
+                float[,] kernel = new float[kernelRows.Max(cols => cols.Count()), kernelRows.Count()];
+                int x = 0;
+                foreach (var row in kernelRows)
+                {
+                    int y = 0;
+                    foreach (var col in row) {
+                        if (!float.TryParse(col, out float value))
+                        {
+                            MessageBox.Show("All Kernel matrix entries must be numbers, but got '{col}'");
+                            return;
+                        }
+                        kernel[x, y++] = value;
+                    }
+                    x++;
+                }
+
+                CurrentBm = CurrentBm.ApplyKernel(kernel, weight, offset);
+                resultPictureBox.Image = CurrentBm;
+            }
 
         }
 

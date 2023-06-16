@@ -188,7 +188,7 @@ namespace image_processor
 
             byte weigthPixel(float value)
             {
-                return (value * weight + offset).ToByte();
+                return (value / weight + offset).ToByte();
             }
 
             void getPixel(int x, int y, out byte r, out byte g, out byte b)
@@ -260,7 +260,7 @@ namespace image_processor
         public static Bitmap BoxBlur(this Bitmap bm, int radius)
         {
             var kernel = OnesArray(radius);
-            return bm.ApplyKernel(kernel, 1f / kernel.Length, 0);
+            return bm.ApplyKernel(kernel, kernel.Length, 0);
         }
 
         // Unsharp masking via original + (original - blurred) * amount
