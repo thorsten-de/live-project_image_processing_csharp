@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using System.Linq.Expressions;
 using System.Drawing.Text;
+using System.Runtime.InteropServices;
 
 namespace image_processor
 {
@@ -468,18 +469,11 @@ namespace image_processor
 
             CurrentBm.ApplyPointOp((ref byte r, ref byte g, ref byte b, ref byte a) =>
             {
-                r = ToByte(128 + (r - 128) * factor);
-                g = ToByte(128 + (g - 128) * factor);
-                b = ToByte(128 + (b - 128) * factor);
+                r = (128 + (r - 128) * factor).ToByte();
+                g = (128 + (g - 128) * factor).ToByte();
+                b = (128 + (b - 128) * factor).ToByte();
             });
             resultPictureBox.Refresh();
-        }
-
-        private byte ToByte(float f)
-        {
-            if (f< 0) return (byte)0;
-            if (f > 255) return (byte)255;
-            return (byte)Math.Round(f);
         }
 
         private void mnuEnhancementsBrightness_Click(object sender, EventArgs e)
@@ -508,32 +502,92 @@ namespace image_processor
 
         private void mnuFiltersBoxBlur_Click(object sender, EventArgs e)
         {
+            int radius = InputForm.GetInt(
+                "Box Blur Filter", "Radius", "1", 1, 100, "Radius is an int between 1 and 100");
 
+            if (radius < 0) return;
+
+            CurrentBm = CurrentBm.BoxBlur(radius);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuFiltersUnsharpMask_Click(object sender, EventArgs e)
         {
+            var strValues = InputForm
+              .GetString("Unsharp mask filter", "Radius and Amount",  "2; 1")
+              .Split(';');
 
+            if (strValues.Length < 2)
+            {
+                MessageBox.Show("Two values must be provided.", "Unsharp Mask filter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!int.TryParse(strValues[0], out int radius) && (radius <= 0 || radius >= 100) ){
+                MessageBox.Show("Radius value must be an Integer between 1 and 100.", "Unsharp Mask filter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!float.TryParse(strValues[1], out float amount)) {
+                MessageBox.Show("Amount value must be a number", "Unsharp Mask filter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            CurrentBm = CurrentBm.UnsharpMask(radius, amount);
+            resultPictureBox.Image= CurrentBm;
         }
 
         private void mnuFiltersRankFilter_Click(object sender, EventArgs e)
         {
+            var values = InputForm
+                .GetString("Rank filter", "Radius and Rank", "2; 2")
+                .Split(';')
+                .Select(s => int.Parse(s.Trim()))
+                .ToArray();
+
+            if (values.Length < 2 || values.Any(v => v < 0))
+            {
+                MessageBox.Show("Two integer values >= 0 must be provided.", "Rank filter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int radius = values[0];
+            int rank = values[1];
+
+            CurrentBm = CurrentBm.RankFilter(radius, radius, rank);
+            resultPictureBox.Image = CurrentBm;
 
         }
 
         private void mnuFiltersMedianFilter_Click(object sender, EventArgs e)
         {
+            int radius = InputForm
+                .GetInt("Median filter", "Radius", "2", 1, 100, "Radius must be an integer between 1 and 100");
 
+            int width = radius * 2 + 1;
+            int median = (width * width) / 2;
+            CurrentBm = CurrentBm.RankFilter(radius, radius, median);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuFiltersMinFilter_Click(object sender, EventArgs e)
         {
+            int radius = InputForm
+                .GetInt("Min filter", "Radius", "1", 1, 100, "Radius must be an integer between 1 and 100");
 
+            int min =0;
+            CurrentBm = CurrentBm.RankFilter(radius, radius, min);
+            resultPictureBox.Image = CurrentBm;
         }
 
         private void mnuFiltersMaxFilter_Click(object sender, EventArgs e)
         {
+            int radius = InputForm
+                .GetInt("Max filter", "Radius", "1", 1, 100, "Radius must be an integer between 1 and 100");
 
+            int width = radius * 2 + 1;
+            int max = (width * width) - 1;
+            CurrentBm = CurrentBm.RankFilter(radius, radius, max);
+            resultPictureBox.Image = CurrentBm;
         }
 
         // Display a dialog where the user can select
@@ -541,6 +595,43 @@ namespace image_processor
         // If the user clicks OK, apply the kernel.
         private void mnuFiltersCustomKernel_Click(object sender, EventArgs e)
         {
+            var kernelForm = new KernelForm();
+            if (kernelForm.ShowDialog() == DialogResult.OK)
+            {
+                if (!float.TryParse(kernelForm.weightTextBox.Text, out float weight))
+                {
+                    MessageBox.Show("Weight must be a number.", "Custom Kernel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (!float.TryParse(kernelForm.offsetTextBox.Text, out float offset))
+                {
+                    MessageBox.Show("Offset must be a number.", "Custom Kernel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var kernelRows = kernelForm.valueTextBox.Text
+                    .Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(row => row.Split(','));
+
+                float[,] kernel = new float[kernelRows.Max(cols => cols.Count()), kernelRows.Count()];
+                int x = 0;
+                foreach (var row in kernelRows)
+                {
+                    int y = 0;
+                    foreach (var col in row) {
+                        if (!float.TryParse(col, out float value))
+                        {
+                            MessageBox.Show("All Kernel matrix entries must be numbers, but got '{col}'");
+                            return;
+                        }
+                        kernel[x, y++] = value;
+                    }
+                    x++;
+                }
+
+                CurrentBm = CurrentBm.ApplyKernel(kernel, weight, offset);
+                resultPictureBox.Image = CurrentBm;
+            }
 
         }
 
